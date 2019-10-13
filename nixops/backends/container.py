@@ -137,7 +137,7 @@ class ContainerState(MachineState):
             nixops.util.write_file(expr_file, expr)
 
             path = subprocess.check_output(
-                ["nix-build", "<nixpkgs/nixos>", "-A", "system",
+                ["nix", "build", "-f", "<nixpkgs/nixos>", "-L", "system",
                  "-I", "nixos-config={0}".format(expr_file)]
                 + self.depl._nix_path_flags()).rstrip()
 

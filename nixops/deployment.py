@@ -258,7 +258,7 @@ class Deployment(object):
         return flags
 
 
-    def _eval_flags(self, exprs):
+    def _eval_flags(self, exprs, new=False):
         flags = self._nix_path_flags()
         args = {key: RawValue(val) for key, val in self.args.iteritems()}
         exprs_ = [RawValue(x) if x[0] == '<' else x for x in exprs]
@@ -266,8 +266,9 @@ class Deployment(object):
             ["--arg", "networkExprs", py2nix(exprs_, inline=True),
              "--arg", "args", py2nix(args, inline=True),
              "--argstr", "uuid", self.uuid,
-             "--argstr", "deploymentName", self.name if self.name else "",
-             "<nixops/eval-machine-info.nix>"])
+             "--argstr", "deploymentName", self.name if self.name else ""]
+            + (["-f"] if new else []) +
+             ["<nixops/eval-machine-info.nix>"])
         return flags
 
 
@@ -660,10 +661,10 @@ class Deployment(object):
 
         try:
             configs_path = subprocess.check_output(
-                ["nix-build"]
-                + self._eval_flags(self.nix_exprs + [phys_expr]) +
+                ["nix", "build", "-L"]
+                + self._eval_flags(self.nix_exprs + [phys_expr], True) +
                 ["--arg", "names", py2nix(names, inline=True),
-                 "-A", "machines", "-o", self.tempdir + "/configs"]
+                 "machines", "-o", self.tempdir + "/configs"]
                 + (["--dry-run"] if dry_run else [])
                 + (["--repair"] if repair else []),
                 stderr=self.logger.log_file).rstrip()
